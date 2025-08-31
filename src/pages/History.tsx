@@ -1,24 +1,42 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Filter, Trash2, Share2, BookOpen, Calendar } from 'lucide-react';
 import { useLessonContext } from '../context/LessonContext';
 import Notification from '../components/Notification';
 
 export default function History() {
-  const { state, dispatch } = useLessonContext();
+  const { fetchLessons, state, dispatch } = useLessonContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubject, setSelectedSubject] = useState('all');
   const [notification, setNotification] = useState({ show: false, message: '' });
-
+  
+useEffect(() => {
+  fetchLessons();
+}, []);
   const subjects = [
-    { value: 'all', label: 'Все предметы' },
+    { value: 'kazakh_language', label: 'Казахский язык' },
+    { value: 'kazakh_literature', label: 'Казахская литература' },
+    { value: 'russian_language', label: 'Русский язык' },
+    { value: 'russian_literature', label: 'Русская литература' },
+    { value: 'english_language', label: 'Английский язык' },
     { value: 'mathematics', label: 'Математика' },
-    { value: 'history', label: 'История' },
+    { value: 'algebra', label: 'Алгебра' },
+    { value: 'geometry', label: 'Геометрия' },
+    { value: 'informatics', label: 'Информатика' },
+    { value: 'kazakhstan_history', label: 'История Казахстана' },
+    { value: 'world_history', label: 'Всемирная история' },
+    { value: 'geography', label: 'География' },
     { value: 'biology', label: 'Биология' },
     { value: 'physics', label: 'Физика' },
     { value: 'chemistry', label: 'Химия' },
-    { value: 'literature', label: 'Литература' },
-    { value: 'geography', label: 'География' },
+    { value: 'natural_science', label: 'Естествознание' },
+    { value: 'self_knowledge', label: 'Самопознание' },
+    { value: 'art_and_labour', label: 'Художественный труд' },
+    { value: 'music', label: 'Музыка' },
+    { value: 'physical_education', label: 'Физическая культура' },
+    { value: 'military_training', label: 'Начальная военная и технологическая подготовка (НВТП)' },
+    { value: 'law_basics', label: 'Основы права' },
+    { value: 'digital_literacy', label: 'Цифровая грамотность' },
     { value: 'other', label: 'Другое' },
   ];
 

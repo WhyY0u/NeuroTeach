@@ -24,7 +24,7 @@ function AppContent() {
       <div className={`min-h-screen transition-colors duration-300 ${
         state.theme === 'dark' ? 'dark bg-gray-900' : 'bg-white'
       }`}>
-        {authState.isAuthenticated && <Header />}
+        {authState.token && <Header />}
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

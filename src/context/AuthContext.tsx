@@ -1,136 +1,114 @@
-import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
-import { User, AuthState } from '../types/User';
+import axios from 'axios';
+import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+
+interface AuthState {
+  user: any;
+  isLoading: boolean;
+  token: string | null;
+}
 
 type AuthAction =
   | { type: 'LOGIN_START' }
-  | { type: 'LOGIN_SUCCESS'; payload: User }
+  | { type: 'LOGIN_SUCCESS'; payload: { user: any; token: string } }
   | { type: 'LOGIN_FAILURE' }
-  | { type: 'LOGOUT' }
-  | { type: 'REGISTER_START' }
-  | { type: 'REGISTER_SUCCESS'; payload: User }
-  | { type: 'REGISTER_FAILURE' };
+  | { type: 'LOGOUT' };
 
 const initialState: AuthState = {
   user: null,
-  isAuthenticated: false,
   isLoading: false,
+  token: localStorage.getItem('token'),
 };
+
+const AuthContext = createContext<{
+  state: AuthState;
+  login: (email: string, password: string) => Promise<boolean>;
+  register: (email: string, password: string, name: string) => Promise<boolean>;
+  logout: () => void;
+} | null>(null);
 
 function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
     case 'LOGIN_START':
-    case 'REGISTER_START':
-      return {
-        ...state,
-        isLoading: true,
-      };
+      return { ...state, isLoading: true };
     case 'LOGIN_SUCCESS':
-    case 'REGISTER_SUCCESS':
-      return {
-        ...state,
-        user: action.payload,
-        isAuthenticated: true,
-        isLoading: false,
-      };
+      return { ...state, isLoading: false, user: action.payload.user, token: action.payload.token };
     case 'LOGIN_FAILURE':
-    case 'REGISTER_FAILURE':
-      return {
-        ...state,
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-      };
+      return { ...state, isLoading: false };
     case 'LOGOUT':
-      return {
-        ...state,
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-      };
+      return { ...state, user: null, token: null };
     default:
       return state;
   }
 }
 
-const AuthContext = createContext<{
-  state: AuthState;
-  dispatch: React.Dispatch<AuthAction>;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, password: string, name?: string) => Promise<boolean>;
-  logout: () => void;
-} | null>(null);
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Load user from localStorage on app start
-  useEffect(() => {
-    const savedUser = localStorage.getItem('neuroteach_user');
-    if (savedUser) {
-      try {
-        const user = JSON.parse(savedUser);
-        dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-      } catch (error) {
-        localStorage.removeItem('neuroteach_user');
-      }
-    }
-  }, []);
+  const login = async (email: string, password: string) => {
+  dispatch({ type: 'LOGIN_START' });
+  try {
+    const res = await axios.post('https://drtyui.ru/api/auth/login', {
+      email,
+      password,
+    });
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    dispatch({ type: 'LOGIN_START' });
-    
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock authentication - in real app, this would be an API call
-      const user: User = {
-        id: crypto.randomUUID(),
-        email,
-        name: email.split('@')[0],
-        createdAt: new Date(),
-      };
-      
-      localStorage.setItem('neuroteach_user', JSON.stringify(user));
-      dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-      return true;
-    } catch (error) {
-      dispatch({ type: 'LOGIN_FAILURE' });
-      return false;
-    }
-  };
+    const data = res.data;
+    console.log('Login response:', data);
 
-  const register = async (email: string, password: string, name?: string): Promise<boolean> => {
-    dispatch({ type: 'REGISTER_START' });
-    
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Mock registration - in real app, this would be an API call
-      const user: User = {
-        id: crypto.randomUUID(),
-        email,
-        name: name || email.split('@')[0],
-        createdAt: new Date(),
-      };
-      
-      localStorage.setItem('neuroteach_user', JSON.stringify(user));
-      dispatch({ type: 'REGISTER_SUCCESS', payload: user });
-      return true;
-    } catch (error) {
-      dispatch({ type: 'REGISTER_FAILURE' });
-      return false;
+    if (!data.access_token) {
+      console.error('Token or user not found in response:', data);
+      throw new Error('Ошибка авторизации: неверный ответ от сервера');
     }
-  };
+
+    localStorage.setItem('token', data.access_token);
+    dispatch({ type: 'LOGIN_SUCCESS', payload: { user: data.user, token: data.token } });
+
+    return true;
+  } catch (err: any) {
+    dispatch({ type: 'LOGIN_FAILURE' });
+    console.error('Ошибка авторизации:', err.response?.data?.message || err.message);
+    return false;
+  }
+};
+
+
+const register = async (email: string, password: string, name: string) => {
+  dispatch({ type: 'LOGIN_START' });
+  try {
+    const res = await axios.post('https://drtyui.ru/api/auth/register', {
+      email,
+      password,
+      name,
+    });
+
+    const data = res.data;
+    console.log('Registration response:', data);
+
+    if (!data.access_token) {
+      console.error('Token or user not found in response:', data);
+      throw new Error(`Ошибка регистрации: неверный ответ от сервера`);
+    }
+
+    localStorage.setItem('token', data.access_token);
+    dispatch({ type: 'LOGIN_SUCCESS', payload: { user: data.user, token: data.token } });
+
+    return true;
+  } catch (err: any) {
+    dispatch({ type: 'LOGIN_FAILURE' });
+    console.error('Ошибка регистрации:', err.response?.data?.message || err.message);
+    return false;
+  }
+};
+
+
 
   const logout = () => {
-    localStorage.removeItem('neuroteach_user');
+    localStorage.removeItem('token');
     dispatch({ type: 'LOGOUT' });
   };
 
   return (
-    <AuthContext.Provider value={{ state, dispatch, login, register, logout }}>
+    <AuthContext.Provider value={{ state, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );
@@ -138,8 +116,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 }

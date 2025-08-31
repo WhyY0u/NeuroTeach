@@ -30,9 +30,7 @@ export default function Login() {
     
     if (success) {
       setNotification({ show: true, message: 'Добро пожаловать в NeuroTeach!' });
-      setTimeout(() => {
-        navigate('/');
-      }, 1000);
+      navigate('/');
     } else {
       setNotification({ show: true, message: 'Неверный email или пароль' });
     }

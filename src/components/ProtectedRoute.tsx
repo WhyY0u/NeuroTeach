@@ -9,7 +9,7 @@ interface ProtectedRouteProps {
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { state } = useAuth();
 
-  if (!state.isAuthenticated) {
+  if (!state.token) {
     return <Navigate to="/login" replace />;
   }
 

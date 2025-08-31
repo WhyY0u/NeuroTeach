@@ -129,58 +129,60 @@ export default function LessonResult() {
         </div>
 
         {/* Lesson Plan */}
-        {lesson.plan && (
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className={`text-2xl font-bold ${
-                state.theme === 'dark' ? 'text-white' : 'text-gray-900'
-              }`}>
-                План урока
-              </h2>
-              
-              <button
-                onClick={handleDownloadPlan}
-                className={`inline-flex items-center px-6 py-3 rounded-xl transition-all duration-200 ${
-                  state.theme === 'dark'
-                    ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                } shadow-lg hover:shadow-xl transform hover:scale-105`}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Скачать план
-              </button>
-            </div>
+{lesson.plan && (
+  <div className="mb-8">
+    <h2 className={`text-2xl font-bold mb-6 ${state.theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+      План урока
+    </h2>
 
-            <div className="grid gap-6">
-              {planSections.map((section, index) => (
-                <div
-                  key={section.title}
-                  className={`bg-gradient-to-br ${
-                    state.theme === 'dark' 
-                      ? 'from-gray-800 to-gray-900' 
-                      : 'from-white to-gray-50'
-                  } rounded-xl shadow-lg p-6 transform transition-all duration-300 hover:shadow-xl hover:scale-102`}
-                  style={{ animationDelay: `${index * 0.1}s` }}
-                >
-                  <div className="flex items-center mb-4">
-                    <span className="text-2xl mr-3">{section.icon}</span>
-                    <h3 className={`text-lg font-semibold ${
-                      state.theme === 'dark' ? 'text-white' : 'text-gray-900'
-                    }`}>
-                      {section.title}
-                    </h3>
-                  </div>
-                  
-                  <p className={`leading-relaxed ${
-                    state.theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    {section.content}
-                  </p>
-                </div>
-              ))}
+    <div className="grid gap-6 md:grid-cols-2">
+      {[
+        { title: 'Вступление', content: lesson.plan.introduction, image: lesson.plan.introductionUrl, icon: '🎯' },
+        { title: 'Объяснение', content: lesson.plan.explanation, image: lesson.plan.explanationUrl, icon: '📚' },
+        { title: 'Практика', content: lesson.plan.practice, image: lesson.plan.practiceUrl, icon: '✍️' },
+        { title: 'Итог', content: lesson.plan.conclusion, image: lesson.plan.conclusionUrl, icon: '🎉' },
+      ].map((section, index) => (
+        <div
+          key={section.title}
+          className={`bg-gradient-to-br ${
+            state.theme === 'dark' ? 'from-gray-800 to-gray-900' : 'from-white to-gray-50'
+          } rounded-2xl shadow-lg overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-2xl`}
+        >
+          {/* Картинка */}
+          {section.image && (
+            <div className="relative w-full h-64 md:h-48">
+              <img
+                src={section.image}
+                alt={section.title}
+                className="w-full h-full object-cover brightness-90 hover:brightness-100 transition-all duration-300"
+              />
+              <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/60 to-transparent p-4">
+                <h3 className={`text-lg font-bold text-white flex items-center`}>
+                  <span className="mr-2">{section.icon}</span>
+                  {section.title}
+                </h3>
+              </div>
             </div>
+          )}
+
+          {/* Текст красиво разделяем на абзацы */}
+          <div className="p-4 space-y-3">
+            {section.content
+              .split(/\n{1,}/) // Разделяем по переносам строк
+              .map((paragraph, i) => (
+                <p key={i} className={`leading-relaxed ${state.theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>
+                  {paragraph.trim()}
+                </p>
+              ))}
           </div>
-        )}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
+
+
 
         {/* Video Script Section */}
         <div className={`bg-gradient-to-br ${

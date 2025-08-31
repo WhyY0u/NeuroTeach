@@ -5,6 +5,7 @@ import { useLessonContext } from '../context/LessonContext';
 import { Subject, LessonStyle } from '../types/Lesson';
 import { generateLessonPlan } from '../utils/mockAI';
 import Notification from '../components/Notification';
+import axios from 'axios';
 
 export default function CreateLesson() {
   const { state, dispatch } = useLessonContext();
@@ -21,15 +22,32 @@ export default function CreateLesson() {
   const [notification, setNotification] = useState({ show: false, message: '' });
 
   const subjects = [
+    { value: 'kazakh_language', label: 'Казахский язык' },
+    { value: 'kazakh_literature', label: 'Казахская литература' },
+    { value: 'russian_language', label: 'Русский язык' },
+    { value: 'russian_literature', label: 'Русская литература' },
+    { value: 'english_language', label: 'Английский язык' },
     { value: 'mathematics', label: 'Математика' },
-    { value: 'history', label: 'История' },
+    { value: 'algebra', label: 'Алгебра' },
+    { value: 'geometry', label: 'Геометрия' },
+    { value: 'informatics', label: 'Информатика' },
+    { value: 'kazakhstan_history', label: 'История Казахстана' },
+    { value: 'world_history', label: 'Всемирная история' },
+    { value: 'geography', label: 'География' },
     { value: 'biology', label: 'Биология' },
     { value: 'physics', label: 'Физика' },
     { value: 'chemistry', label: 'Химия' },
-    { value: 'literature', label: 'Литература' },
-    { value: 'geography', label: 'География' },
+    { value: 'natural_science', label: 'Естествознание' },
+    { value: 'self_knowledge', label: 'Самопознание' },
+    { value: 'art_and_labour', label: 'Художественный труд' },
+    { value: 'music', label: 'Музыка' },
+    { value: 'physical_education', label: 'Физическая культура' },
+    { value: 'military_training', label: 'Начальная военная и технологическая подготовка (НВТП)' },
+    { value: 'law_basics', label: 'Основы права' },
+    { value: 'digital_literacy', label: 'Цифровая грамотность' },
     { value: 'other', label: 'Другое' },
   ];
+
 
   const styles = [
     { value: 'strict', label: 'Строго и академично' },
@@ -39,48 +57,70 @@ export default function CreateLesson() {
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.topic || !formData.level) {
-      setNotification({ show: true, message: 'Пожалуйста, заполните все обязательные поля' });
-      return;
-    }
+  e.preventDefault();
 
-    dispatch({ type: 'SET_GENERATING', payload: true });
+  if (!formData.topic || !formData.level || !formData.subject) {
+    setNotification({ show: true, message: 'Пожалуйста, заполните все обязательные поля' });
+    return;
+  }
 
-    try {
-      const lessonPlan = await generateLessonPlan(
-        formData.subject,
-        formData.topic,
-        formData.level,
-        formData.duration,
-        formData.style
-      );
+  dispatch({ type: 'SET_GENERATING', payload: true });
 
-      const newLesson = {
-        id: crypto.randomUUID(),
-        title: formData.topic,
-        subject: formData.subject,
-        topic: formData.topic,
-        level: formData.level,
-        duration: formData.duration,
-        style: formData.style,
-        createdAt: new Date(),
-        plan: lessonPlan,
-      };
+  try {
+    const lessonPlan = await generateLessonPlan(
+      formData.subject,
+      formData.topic,
+      formData.level,
+      formData.duration,
+      formData.style
+    );
 
+    const newLesson = {
+      id: crypto.randomUUID(),
+      title: formData.topic,
+      subject: formData.subject,
+      topic: formData.topic,
+      level: formData.level,
+      duration: formData.duration,
+      style: formData.style,
+      createdAt: new Date(),
+      plan: lessonPlan,
+    };
+   const token = localStorage.getItem('token'); 
+    const res = await axios.post('https://drtyui.ru/api/lessons',  {
+      predmet: formData.subject,
+      duration: formData.duration,
+      topic: formData.topic,
+      aold: formData.level,
+      style: formData.style,
+    }, {
+      headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    timeout: 10000000000,
+
+    });
+
+    if (res.status === 201 || res.data.success) {
       dispatch({ type: 'ADD_LESSON', payload: newLesson });
       setNotification({ show: true, message: 'Урок успешно создан!' });
-      
+
       setTimeout(() => {
         navigate(`/lesson/${newLesson.id}`);
       }, 1000);
-    } catch (error) {
-      setNotification({ show: true, message: 'Ошибка при создании урока' });
-    } finally {
-      dispatch({ type: 'SET_GENERATING', payload: false });
+    } else {
+      setNotification({ show: true, message: `Ошибка сервера: ${res.data.message || res.statusText}` });
     }
-  };
+
+  } catch (err: any) {
+    console.error(err);
+    setNotification({ show: true, message: `Ошибка при создании урока: ${err.response?.data?.message || err.message}` });
+  } finally {
+    dispatch({ type: 'SET_GENERATING', payload: false });
+  }
+};
+
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${
